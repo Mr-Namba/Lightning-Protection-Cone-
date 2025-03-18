@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive Lightning Protection Cone</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .slider-container {
+            margin-bottom: 15px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .note {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 250px;
+            padding: 10px;
+            background-color: #fff8c4;
+            border: 1px solid #ffeb3b;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="note">
+        <strong>Recommended Protection Angles:</strong>
+        <ul>
+            <li><strong>Class I (High-risk):</strong> 20°</li>
+            <li><strong>Class II:</strong> 30°</li>
+            <li><strong>Class III (Common buildings):</strong> 45° (default)</li>
+            <li><strong>Class IV (Low-risk):</strong> 60°</li>
+        </ul>
+    </div>
+
+    <h2>Interactive Lightning Protection Cone</h2>
+
+    <div class="slider-container">
+        <label>Air Terminal Height (m): <span id="airHeightVal">20</span></label><br>
+        <input type="range" id="airHeight" min="1" max="50" step="0.5" value="20">
+    </div>
+
+    <div class="slider-container">
+        <label>Device Height (m): <span id="deviceHeightVal">10</span></label><br>
+        <input type="range" id="deviceHeight" min="0.5" max="30" step="0.5" value="10">
+    </div>
+
+    <div class="slider-container">
+        <label>Device Horizontal Position (m): <span id="devicePosVal">5</span></label><br>
+        <input type="range" id="devicePos" min="-30" max="30" step="0.5" value="5">
+    </div>
+
+    <div class="slider-container">
+        <label>Protection Angle (°): <span id="angleVal">45</span></label><br>
+        <input type="range" id="angle" min="20" max="60" step="1" value="45">
+    </div>
+
+    <canvas id="canvas" width="700" height="500"></canvas>
+
+    <script>
+        const airHeight = document.getElementById('airHeight');
+        const deviceHeight = document.getElementById('deviceHeight');
+        const devicePos = document.getElementById('devicePos');
+        const angle = document.getElementById('angle');
+
+        const airHeightVal = document.getElementById('airHeightVal');
+        const deviceHeightVal = document.getElementById('deviceHeightVal');
+        const devicePosVal = document.getElementById('devicePosVal');
+        const angleVal = document.getElementById('angleVal');
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function drawCone() {
+            const airH = parseFloat(airHeight.value);
+            const deviceH = parseFloat(deviceHeight.value);
+            const deviceX = parseFloat(devicePos.value);
+            const angleDeg = parseFloat(angle.value);
+
+            airHeightVal.textContent = airH;
+            deviceHeightVal.textContent = deviceH;
+            devicePosVal.textContent = deviceX;
+            angleVal.textContent = angleDeg;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const scale = 10;
+            const baseX = canvas.width / 2;
+            const baseY = canvas.height - 40;
+
+            const groundRadius = airH * Math.tan(angleDeg * Math.PI / 180);
+
+            // Draw pole
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(baseX, baseY);
+            ctx.lineTo(baseX, baseY - airH * scale);
+            ctx.stroke();
+
+            // Draw air terminal
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(baseX, baseY - airH * scale, 7, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Draw protective cone
+            ctx.strokeStyle = 'green';
+            ctx.setLineDash([8, 4]);
+            ctx.beginPath();
+            ctx.moveTo(baseX, baseY - airH * scale);
+            ctx.lineTo(baseX - groundRadius * scale, baseY);
+            ctx.lineTo(baseX + groundRadius * scale, baseY);
+            ctx.closePath();
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(0,255,0,0.1)';
+            ctx.fill();
+            ctx.setLineDash([]);
+
+            // Draw device
+            ctx.fillStyle = 'blue';
+            ctx.beginPath();
+            ctx.arc(baseX + deviceX * scale, baseY - deviceH * scale, 6, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // Check protection
+            const horizontalDistance = Math.abs(deviceX);
+            const allowedRadius = (airH - deviceH) * Math.tan(angleDeg * Math.PI / 180);
+
+            ctx.font = '16px Arial';
+            ctx.fillStyle = horizontalDistance <= allowedRadius && deviceH < airH ? 'green' : 'red';
+            ctx.fillText(horizontalDistance <= allowedRadius && deviceH < airH ? 'Device Protected ✅' : 'Device NOT Protected ❌', canvas.width / 2, 20);
+
+            // Ground line
+            ctx.strokeStyle = '#888';
+            ctx.beginPath();
+            ctx.moveTo(0, baseY);
+            ctx.lineTo(canvas.width, baseY);
+            ctx.stroke();
+        }
+
+        airHeight.oninput = drawCone;
+        deviceHeight.oninput = drawCone;
+        devicePos.oninput = drawCone;
+        angle.oninput = drawCone;
+
+        window.onload = drawCone;
+    </script>
+</body>
+</html>
+
